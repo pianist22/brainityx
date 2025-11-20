@@ -8,5 +8,20 @@ export const metadata = {
 };
 
 export default function AboutPage(){
-  return <AboutPageClient/>
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "BRAINITYX RESEARCHTECH (OPC) PRIVATE LIMITED",
+    url: "https://brainityxresearchtech.in",
+    logo: "https://brainityxresearchtech.in/Brainityx_Logo.png",
+  };
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
+      <AboutPageClient/>
+    </>
+);
 }
