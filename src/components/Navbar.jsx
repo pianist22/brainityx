@@ -461,21 +461,21 @@
 //     </nav>
 //   );
 // }
-
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, X, ChevronDown, ArrowRight } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
   Sheet,
   SheetContent,
@@ -498,35 +498,42 @@ const navLinks = [
   { title: "Benefits", href: "/benefits" },
 ];
 
+// Client-safe env vars (must be NEXT_PUBLIC_*)
+const IndianLink = process.env.NEXT_PUBLIC_RAZORPAY_INDIAN_LINK;
+const InternationalLink = process.env.NEXT_PUBLIC_RAZORPAY_INTERNATIONAL_LINK;
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   const isServicesActive = pathname.startsWith("/services");
-
-  // Reset isProcessing when pathname changes (navigation complete)
-  useEffect(() => {
-    setIsProcessing(false);
-  }, [pathname]);
-
-  const handlePayNowClick = () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    router.push("/razorpay/add-amount");
-  };
 
   const desktopBase =
     "text-base font-medium text-muted-foreground transition-all duration-300 ease-in-out border-b-2 border-transparent";
   const desktopActive = "text-primary font-semibold border-b-primary";
+
+  // ✅ This is the styling you already use in Services menu items
   const dropdownItemBase =
-    "cursor-pointer px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-primary hover:font-semibold hover:drop-shadow-sm focus:bg-secondary focus:text-primary focus:font-semibold focus:drop-shadow-sm";
+    "cursor-pointer px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 " +
+    "hover:bg-secondary hover:text-primary hover:font-semibold hover:drop-shadow-sm " +
+    "focus:bg-secondary focus:text-primary focus:font-semibold focus:drop-shadow-sm";
   const dropdownItemActive = "text-primary font-semibold bg-secondary/60";
+
   const mobileLinkBase =
     "rounded-md px-4 py-3 text-base font-medium text-muted-foreground transition-all duration-300 hover:bg-secondary hover:text-primary hover:font-semibold hover:drop-shadow-sm";
-  const mobileLinkActive = "text-primary font-semibold border-l-4 border-primary bg-secondary/50";
+  const mobileLinkActive =
+    "text-primary font-semibold border-l-4 border-primary bg-secondary/50";
+
+  // ✅ Reuse same panel style as Services dropdown (shadow + border + bg)
+  const dropdownPanelClass =
+    "w-80 rounded-xl border border-border bg-popover p-2 shadow-[0_18px_40px_rgba(0,0,0,0.12)]";
+
+  // PayNow dropdown links (fallback to "#" if env missing)
+  const payNowLinks = [
+    { title: "For National Author", href: IndianLink || "#" },
+    { title: "For International Author", href: InternationalLink || "#" },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full glass-effect border-b border-border">
@@ -558,9 +565,10 @@ export default function Navbar() {
               <span>Services</span>
               <ChevronDown className="h-4 w-4 transition-transform duration-300 group-data-[state=open]:rotate-180" />
             </DropdownMenuTrigger>
+
             <DropdownMenuContent
               align="start"
-              className="w-80 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+              className={`${dropdownPanelClass} animate-in fade-in-0 zoom-in-95 slide-in-from-top-2`}
             >
               {services.map((service) => {
                 const active = pathname === service.href;
@@ -601,14 +609,47 @@ export default function Navbar() {
             Get a Quote
           </Link>
 
-          {/* Desktop Pay Now Button */}
-          <button
-            onClick={handlePayNowClick}
-            disabled={isProcessing}
-            className="rounded-md border-2 border-primary bg-primary px-6 py-2 text-base font-semibold text-primary-foreground transition-colors duration-300 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isProcessing ? "Loading..." : "Pay Now"}
-          </button>
+          {/* Pay Now Dropdown (same styling as Services dropdown) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="group inline-flex items-center gap-2 rounded-md border-2 border-primary bg-primary px-6 py-2 text-base font-semibold text-primary-foreground transition-colors duration-300 hover:bg-primary/90">
+                <span>Pay Now</span>
+                <ChevronDown className="h-4 w-4 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+              </button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              className={`${dropdownPanelClass} w-72 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2`}
+            >
+              {payNowLinks.map((item) => {
+                const isDisabled = item.href === "#";
+                const isActive = false; // keep false (external links), but you can customize later
+
+                return (
+                  <DropdownMenuItem
+                    key={item.title}
+                    className={`${dropdownItemBase} ${isActive ? dropdownItemActive : ""} ${
+                      isDisabled ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                    onSelect={(e) => {
+                      if (isDisabled) e.preventDefault();
+                    }}
+                  >
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-between"
+                    >
+                      <span>{item.title}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -621,6 +662,7 @@ export default function Navbar() {
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </SheetTrigger>
+
           <SheetContent side="right" className="w-80 overflow-y-auto glass-effect">
             <SheetHeader>
               <SheetTitle className="text-left text-xl font-bold text-foreground">
@@ -658,8 +700,8 @@ export default function Navbar() {
                           key={service.href}
                           href={service.href}
                           onClick={() => setIsOpen(false)}
-                          className={`rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-primary hover:font-semibold hover:drop-shadow-sm ${
-                            active ? "text-primary font-semibold" : ""
+                          className={`rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-primary hover:font-semibold hover:drop-shadow-sm ${
+                            active ? "text-primary font-semibold bg-secondary/60" : ""
                           }`}
                         >
                           {service.title}
@@ -694,17 +736,44 @@ export default function Navbar() {
                 Get a Quote
               </Link>
 
-              {/* Mobile Pay Now Button */}
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  handlePayNowClick();
-                }}
-                disabled={isProcessing}
-                className="rounded-md border-2 border-primary bg-primary px-6 py-3 text-center text-base font-semibold text-primary-foreground transition-colors duration-300 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? "Loading..." : "Pay Now"}
-              </button>
+              {/* Mobile Pay Now Dropdown (same styling as Services dropdown) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="group inline-flex w-full items-center justify-center gap-2 rounded-md border-2 border-primary bg-primary px-6 py-3 text-center text-base font-semibold text-primary-foreground transition-colors duration-300 hover:bg-primary/90">
+                    <span>Pay Now</span>
+                    <ChevronDown className="h-4 w-4 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  align="end"
+                  className={`${dropdownPanelClass} w-72 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2`}
+                >
+                  {payNowLinks.map((item) => {
+                    const isDisabled = item.href === "#";
+                    return (
+                      <DropdownMenuItem
+                        key={item.title}
+                        className={`${dropdownItemBase} ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
+                        onSelect={(e) => {
+                          if (isDisabled) e.preventDefault();
+                          setIsOpen(false);
+                        }}
+                      >
+                        <a
+                          href={item.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex w-full items-center justify-between"
+                        >
+                          <span>{item.title}</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </a>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </SheetContent>
         </Sheet>
